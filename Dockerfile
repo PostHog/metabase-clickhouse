@@ -29,11 +29,11 @@ WORKDIR /app
 
 # Copy the Metabase app from the offical image
 COPY --from=metabase/metabase:v0.44.6 /app /app
-RUN chown -R metabase /app
 
 # Copy the ClickHouse driver
-ADD https://github.com/enqueue/metabase-clickhouse-driver/releases/download/0.7.5/clickhouse.metabase-driver.jar /plugins/
-RUN chmod 744 /plugins/clickhouse.metabase-driver.jar
+ADD --chmod=744 https://github.com/enqueue/metabase-clickhouse-driver/releases/download/0.7.5/clickhouse.metabase-driver.jar /app/plugins/
+
+RUN chown -R metabase /app
 
 USER metabase
 EXPOSE 3000
