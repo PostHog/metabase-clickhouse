@@ -4,7 +4,7 @@
 #
 # FROM metabase/metabase:v0.44.6
 #
-# ADD https://github.com/enqueue/metabase-clickhouse-driver/releases/download/0.7.5/clickhouse.metabase-driver.jar /plugins/
+# ADD https://github.com/ClickHouse/metabase-clickhouse-driver/releases/download/0.9.2/clickhouse.metabase-driver.jar /plugins/
 #
 # RUN chmod 744 /plugins/clickhouse.metabase-driver.jar
 #
@@ -31,7 +31,7 @@ WORKDIR /app
 COPY --from=metabase/metabase:v0.44.6 /app /app
 
 # Copy the ClickHouse driver
-ADD --chmod=744 https://github.com/enqueue/metabase-clickhouse-driver/releases/download/0.7.5/clickhouse.metabase-driver.jar /app/plugins/
+ADD --chmod=744 https://github.com/ClickHouse/metabase-clickhouse-driver/releases/download/0.9.2/clickhouse.metabase-driver.jar /app/plugins/
 
 RUN chown -R metabase /app
 
