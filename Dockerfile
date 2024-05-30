@@ -2,7 +2,7 @@
 # Once https://github.com/metabase/metabase/issues/13119 will be resolved, please uncomment this
 # section to use the official image and remove everything after it.
 #
-# FROM metabase/metabase:v0.44.6
+# FROM metabase/metabase-enterprise:v1.49.13
 #
 # ADD https://github.com/ClickHouse/metabase-clickhouse-driver/releases/download/0.9.2/clickhouse.metabase-driver.jar /plugins/
 #
@@ -28,7 +28,7 @@ RUN apt-get update -yq && apt-get install -yq bash fonts-dejavu-core fonts-dejav
 WORKDIR /app
 
 # Copy the Metabase app from the offical image
-COPY --from=metabase/metabase:v0.46.6.1 /app /app
+COPY --from=metabase/metabase-enterprise:v1.49.13 /app /app
 
 # Copy the ClickHouse driver
 ADD --chmod=744 https://github.com/ClickHouse/metabase-clickhouse-driver/releases/download/1.1.7/clickhouse.metabase-driver.jar /app/plugins/
