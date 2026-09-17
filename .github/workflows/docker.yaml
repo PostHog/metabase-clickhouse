@@ -1,6 +1,7 @@
 name: Build docker image
 
 on:
+  pull_request:
   push:
     branches:
       - 'main'
@@ -11,8 +12,23 @@ permissions:
   packages: write
 
 jobs:
+  test:
+    name: build and smoke test image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+
+      - name: Build image
+        run: docker build --tag metabase-clickhouse:test .
+
+      - name: Verify bundled drivers
+        run: scripts/smoke-test.sh metabase-clickhouse:test
+
   build:
     name: build and publish docker image
+    if: github.event_name == 'push'
+    needs: test
     runs-on: ubuntu-latest
     steps:
 
