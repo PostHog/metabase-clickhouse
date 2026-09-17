@@ -11,7 +11,7 @@
 
 FROM ubuntu:22.04
 
-ENV FC_LANG en-US LC_CTYPE en_US.UTF-8
+ENV FC_LANG=en-US LC_CTYPE=en_US.UTF-8
 
 # Install dependencies
 RUN apt-get update -yq && apt-get install -yq bash fonts-dejavu-core fonts-dejavu-extra fontconfig curl openjdk-11-jre-headless && \
@@ -32,6 +32,18 @@ COPY --from=metabase/metabase-enterprise:v1.49.19 /app /app
 
 # Copy the ClickHouse driver
 ADD --chmod=744 https://github.com/ClickHouse/metabase-clickhouse-driver/releases/download/1.5.1/clickhouse.metabase-driver.jar /app/plugins/
+
+# Metabase 1.49 bundles the legacy Presto JDBC driver, which cannot complete
+# prepared-statement handshakes with Trino. Add the Starburst/Trino driver that
+# uses io.trino.jdbc.TrinoDriver. Version 4.1.0 targets Metabase 1.47.2 and is
+# compatible with the pinned 1.49.19 image.
+ARG STARBURST_DRIVER_VERSION=4.1.0
+ARG STARBURST_DRIVER_SHA256=238e6329d52482c4daa91a7d5855f8da7626758b6cc40fef103d3ab9b54a2869
+RUN curl -fsSL \
+        "https://github.com/starburstdata/metabase-driver/releases/download/${STARBURST_DRIVER_VERSION}/starburst-${STARBURST_DRIVER_VERSION}.metabase-driver.jar" \
+        -o /app/plugins/starburst.metabase-driver.jar && \
+    echo "${STARBURST_DRIVER_SHA256}  /app/plugins/starburst.metabase-driver.jar" | sha256sum -c - && \
+    chmod 744 /app/plugins/starburst.metabase-driver.jar
 
 RUN chown -R metabase /app
 
