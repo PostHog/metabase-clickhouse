@@ -18,5 +18,21 @@ docker build -t metabase-clickhouse:test .
 scripts/smoke-test.sh metabase-clickhouse:test
 ```
 
-CI runs the same smoke test and publishes the multi-architecture image after a
+CI runs this legacy smoke test and publishes the multi-architecture image after a
 change lands on `main`.
+
+## Metabase 0.64.1 rehearsal
+
+The isolated rehearsal build uses Metabase OSS 0.64.1 with ClickHouse JDBC 0.10.0.
+The source commit and build patch live in `scripts/`. Build and test it with:
+
+```sh
+scripts/build-rehearsal.sh metabase-clickhouse:rehearsal-test
+scripts/smoke-test.sh metabase-clickhouse:rehearsal-test v0.64.1
+```
+
+Set `PLATFORM=linux/amd64` for an amd64 build. The default builds for arm64.
+The existing CI and release workflow still build and publish only the legacy
+image from `Dockerfile`. Publish the rehearsal image separately and use its
+registry digest in the isolated rehearsal values. Do not use the local Docker
+image ID as a registry digest.

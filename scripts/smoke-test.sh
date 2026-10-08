@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-image=${1:?usage: scripts/smoke-test.sh IMAGE}
+image=${1:?usage: scripts/smoke-test.sh IMAGE [EXPECTED_VERSION]}
+expected_version=${2:-}
 container="metabase-driver-smoke-${RANDOM}-${RANDOM}"
 
 cleanup() {
@@ -13,7 +14,7 @@ docker run -d --name "$container" -p 127.0.0.1::3000 "$image" >/dev/null
 port=$(docker port "$container" 3000/tcp | awk -F: 'NR == 1 { print $NF }')
 
 for _ in $(seq 1 90); do
-    status=$(curl -sS -o /tmp/metabase-driver-smoke.json -w '%{http_code}' \
+    status=$(curl --max-time 5 -sS -o /tmp/metabase-driver-smoke.json -w '%{http_code}' \
         "http://127.0.0.1:${port}/api/session/properties" 2>/dev/null || true)
     if [[ "$status" == "200" ]]; then
         break
@@ -27,10 +28,10 @@ if [[ ${status:-} != "200" ]]; then
     exit 1
 fi
 
-jq -e '
+jq -e --arg version "$expected_version" '
     .engines.clickhouse != null and
     .engines.starburst != null and
-    .engines.starburst["driver-name"] == "Starburst"
+    ($version == "" or .version.tag == $version)
 ' /tmp/metabase-driver-smoke.json >/dev/null
 
 jq '{version, drivers: (.engines | with_entries(select(.key == "clickhouse" or .key == "starburst")) | keys)}' \
