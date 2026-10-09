@@ -10,12 +10,29 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-  image:
+  verify:
     name: build and smoke test image
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5
+
+      - name: Build image
+        run: scripts/build-image.sh metabase-clickhouse:ci
+
+      - name: Verify release and bundled drivers
+        run: scripts/smoke-test.sh metabase-clickhouse:ci v0.64.1
+
+  publish:
+    name: build, verify, and publish image
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Check out repository
         uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5
@@ -24,9 +41,7 @@ jobs:
         id: image
         shell: bash
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            tag=ci
-          elif [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             tag="${GITHUB_REF_NAME#v}"
           else
             tag=main
@@ -44,7 +59,6 @@ jobs:
         run: scripts/smoke-test.sh "$IMAGE" v0.64.1
 
       - name: Log in to GHCR
-        if: github.event_name == 'push'
         uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7
         with:
           registry: ghcr.io
@@ -52,13 +66,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish verified image
-        if: github.event_name == 'push'
         env:
           IMAGE: ${{ steps.image.outputs.name }}
         run: docker push "$IMAGE"
 
       - name: Inspect published digest
-        if: github.event_name == 'push'
         env:
           IMAGE: ${{ steps.image.outputs.name }}
         run: docker buildx imagetools inspect "$IMAGE"
