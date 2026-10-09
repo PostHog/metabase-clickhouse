@@ -32,7 +32,8 @@ scripts/smoke-test.sh metabase-clickhouse:rehearsal-test v0.64.1
 ```
 
 Set `PLATFORM=linux/amd64` for an amd64 build. The default builds for arm64.
-The existing CI and release workflow still build and publish only the legacy
-image from `Dockerfile`. Publish the rehearsal image separately and use its
-registry digest in the isolated rehearsal values. Do not use the local Docker
-image ID as a registry digest.
+CI smoke-tests this image on pull requests. Pushing the tag
+`v0.64.1-rehearsal.1` builds, tests, and publishes the arm64 image as
+`ghcr.io/posthog/metabase-clickhouse:0.64.1-rehearsal.1`. The tag does not
+publish the legacy image. Only use the GHCR registry digest in the isolated
+rehearsal values. Do not use the local Docker image ID as a registry digest.

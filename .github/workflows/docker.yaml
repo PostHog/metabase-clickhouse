@@ -14,6 +14,7 @@ permissions:
 jobs:
   test:
     name: build and smoke test image
+    if: ${{ !contains(github.ref, '-rehearsal.') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
@@ -25,9 +26,41 @@ jobs:
       - name: Verify bundled drivers
         run: scripts/smoke-test.sh metabase-clickhouse:test
 
+  rehearsal:
+    name: build and smoke test 0.64.1 rehearsal image
+    if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/tags/v0.64.1-rehearsal.1' }}
+    runs-on: ubuntu-24.04-arm
+    env:
+      IMAGE: ghcr.io/posthog/metabase-clickhouse:0.64.1-rehearsal.1
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+
+      - name: Build rehearsal image
+        run: scripts/build-rehearsal.sh "$IMAGE"
+
+      - name: Verify bundled drivers and release
+        run: scripts/smoke-test.sh "$IMAGE" v0.64.1
+
+      - name: Login to GHCR
+        if: github.ref == 'refs/tags/v0.64.1-rehearsal.1'
+        uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7 # v1.14.1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push rehearsal image
+        if: github.ref == 'refs/tags/v0.64.1-rehearsal.1'
+        run: docker push "$IMAGE"
+
+      - name: Image digest
+        if: github.ref == 'refs/tags/v0.64.1-rehearsal.1'
+        run: docker buildx imagetools inspect "$IMAGE"
+
   build:
     name: build and publish docker image
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && !contains(github.ref, '-rehearsal.')
     needs: test
     runs-on: ubuntu-latest
     steps:
