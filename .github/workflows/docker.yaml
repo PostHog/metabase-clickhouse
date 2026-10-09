@@ -34,10 +34,14 @@ jobs:
           printf 'name=ghcr.io/posthog/metabase-clickhouse:%s\n' "$tag" >> "$GITHUB_OUTPUT"
 
       - name: Build image
-        run: scripts/build-image.sh "${{ steps.image.outputs.name }}"
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: scripts/build-image.sh "$IMAGE"
 
       - name: Verify release and bundled drivers
-        run: scripts/smoke-test.sh "${{ steps.image.outputs.name }}" v0.64.1
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: scripts/smoke-test.sh "$IMAGE" v0.64.1
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
@@ -49,8 +53,12 @@ jobs:
 
       - name: Publish verified image
         if: github.event_name == 'push'
-        run: docker push "${{ steps.image.outputs.name }}"
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: docker push "$IMAGE"
 
       - name: Inspect published digest
         if: github.event_name == 'push'
-        run: docker buildx imagetools inspect "${{ steps.image.outputs.name }}"
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: docker buildx imagetools inspect "$IMAGE"
