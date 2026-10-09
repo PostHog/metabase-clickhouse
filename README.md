@@ -18,8 +18,9 @@ Set `PLATFORM=linux/amd64` for an amd64 build. The default builds for ARM64.
 CI builds and smoke-tests the image on pull requests and publishes the same
 recipe to GHCR after pushes to `main` and signed `v*` release tags. Pull
 requests never publish an image. The tag `v0.64.1` publishes
-`ghcr.io/posthog/metabase-clickhouse:0.64.1`. Pin deployments to the registry
-digest from the tag build, not the mutable tag or a local Docker image ID.
+`ghcr.io/posthog/metabase-clickhouse:0.64.1`. In GitOps values, specify
+the version tag and its registry digest in the same image reference.
+Kubernetes then displays the version and pulls the immutable digest.
 
 The older `0.64.1-rehearsal.1` tag remains available for the isolated production
 rehearsal releases. Metabase migrates its metadata database on startup. Back up
