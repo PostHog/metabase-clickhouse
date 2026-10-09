@@ -1,39 +1,27 @@
 # metabase-clickhouse
 
-This repo builds the [official Metabase enterprise Docker image](https://hub.docker.com/r/metabase/metabase-enterprise/) with:
+This repository builds Metabase OSS v0.64.1 for ARM64. It applies a pinned
+patch to bundle ClickHouse JDBC 0.10.0 and retains the upstream Starburst driver.
+The build clones the Metabase v0.64.1 tag and verifies its source commit before
+applying the patch. To update Metabase or the ClickHouse driver, update the pins
+in `scripts/build-image.sh`, the patch in `scripts/`, and the expected version
+in `.github/workflows/docker.yaml`.
 
-- the [ClickHouse driver](https://github.com/ClickHouse/metabase-clickhouse-driver);
-- the [Starburst driver](https://github.com/starburstdata/metabase-driver), which provides the Trino JDBC integration missing from Metabase 1.49; and
-- ARM64 support (see the upstream [issue](https://github.com/metabase/metabase/issues/13119)).
-
-The legacy built-in `Presto` driver is not a substitute for the Starburst/Trino
-driver: its old JDBC protocol cannot complete prepared-statement handshakes
-against current Trino. Select **Starburst** when configuring a Trino database.
-
-To update Metabase or either driver, update the pinned version and checksum in
-`Dockerfile`. Run the image smoke test before opening a PR:
+Build and verify the image locally:
 
 ```sh
-docker build -t metabase-clickhouse:test .
-scripts/smoke-test.sh metabase-clickhouse:test
+scripts/build-image.sh metabase-clickhouse:test
+scripts/smoke-test.sh metabase-clickhouse:test v0.64.1
 ```
 
-CI runs this legacy smoke test and publishes the multi-architecture image after a
-change lands on `main`.
+Set `PLATFORM=linux/amd64` for an amd64 build. The default builds for ARM64.
+CI builds and smoke-tests the image on pull requests and publishes the same
+recipe to GHCR after pushes to `main` and signed `v*` release tags. Pull
+requests never publish an image. The tag `v0.64.1` publishes
+`ghcr.io/posthog/metabase-clickhouse:0.64.1`. Pin deployments to the registry
+digest from the tag build, not the mutable tag or a local Docker image ID.
 
-## Metabase 0.64.1 rehearsal
-
-The isolated rehearsal build uses Metabase OSS 0.64.1 with ClickHouse JDBC 0.10.0.
-The source commit and build patch live in `scripts/`. Build and test it with:
-
-```sh
-scripts/build-rehearsal.sh metabase-clickhouse:rehearsal-test
-scripts/smoke-test.sh metabase-clickhouse:rehearsal-test v0.64.1
-```
-
-Set `PLATFORM=linux/amd64` for an amd64 build. The default builds for arm64.
-CI smoke-tests this image on pull requests. Pushing the tag
-`v0.64.1-rehearsal.1` builds, tests, and publishes the arm64 image as
-`ghcr.io/posthog/metabase-clickhouse:0.64.1-rehearsal.1`. The tag does not
-publish the legacy image. Only use the GHCR registry digest in the isolated
-rehearsal values. Do not use the local Docker image ID as a registry digest.
+The older `0.64.1-rehearsal.1` tag remains available for the isolated production
+rehearsal releases. Metabase migrates its metadata database on startup. Back up
+the serving database before changing its image; rolling back the image alone
+does not reverse a schema migration.
